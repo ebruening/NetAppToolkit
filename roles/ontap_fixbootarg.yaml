@@ -1,0 +1,41 @@
+---
+- hosts: all
+  gather_facts: no
+  vars_prompt:
+    - name: password
+      private: yes
+
+  vars:
+    login: &login
+      username: ansible #"{{ username }}"
+      password: "{{ password }}"
+      hostname: "{{ inventory_hostname }}"
+      https: yes
+      validate_certs: false
+  
+  tasks:
+    - name: create new User
+      delegate_to: localhost
+      netapp.ontap.na_ontap_user:
+        state: present
+        name: ansible
+        applications: http,ontapi,ssh
+        authentication_method: password
+        lock_user: False
+        role_name: admin
+        <<: *login
+
+    - name: run ontap cli command
+      delegate_to: localhost
+      netapp.ontap.na_ontap_ssh_command:
+        command: node run -node * -command bootargs unset bootarg.gb.override.lmgr.veto'
+        privilege: diag
+        <<: *login
+
+    - name: Send message
+      delegate_to: localhost
+      netapp.ontap.na_ontap_autosupport_invoke:
+        autosupport_message: 'fix A boot argument that is only expected to be set during ONTAP update is still set.'
+        <<: *login
+
+#https://kb.netapp.com/onprem/ontap/os/Unexpected_bootargument_is_set_-_Active_IQ_Wellness_Risk
