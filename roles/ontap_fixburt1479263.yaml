@@ -1,0 +1,30 @@
+---
+- hosts: all
+  gather_facts: no
+  vars_prompt:
+    - name: password
+      private: yes
+
+  vars:
+    login: &login
+      username: ansible #"{{ username }}"
+      password: "{{ password }}"
+      hostname: "{{ inventory_hostname }}"
+      https: yes
+      validate_certs: false
+  
+  tasks:
+   - name: run ontap cli command
+     delegate_to: localhost
+     netapp.ontap.na_ontap_ssh_command:
+       command: "system node run -node * options disk.latency_check_ssd.fail_enable on"
+       privilege: diag
+       <<: *login
+ 
+   - name: Send message
+     delegate_to: localhost
+     netapp.ontap.na_ontap_autosupport_invoke:
+       autosupport_message: 'fix Burt 1479263 - Applications experience latency due to a single slow SSD'
+       <<: *login
+
+#https://mysupport.netapp.com/site/bugs-online/product/ONTAP/BURT/1479263

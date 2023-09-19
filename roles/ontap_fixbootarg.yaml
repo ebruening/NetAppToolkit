@@ -14,21 +14,10 @@
       validate_certs: false
   
   tasks:
-    - name: create new User
-      delegate_to: localhost
-      netapp.ontap.na_ontap_user:
-        state: present
-        name: ansible
-        applications: http,ontapi,ssh
-        authentication_method: password
-        lock_user: False
-        role_name: admin
-        <<: *login
-
     - name: run ontap cli command
       delegate_to: localhost
       netapp.ontap.na_ontap_ssh_command:
-        command: node run -node * -command bootargs unset bootarg.gb.override.lmgr.veto'
+        command: "node run -node * -command bootargs unset bootarg.gb.override.lmgr.veto"
         privilege: diag
         <<: *login
 
