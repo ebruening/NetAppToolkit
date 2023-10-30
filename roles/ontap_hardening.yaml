@@ -1,0 +1,37 @@
+- hosts: all
+  gather_facts: no
+  vars_prompt:
+    - name: password
+      private: yes
+
+  vars:
+    login: &login
+      username: ansible #"{{ username }}"
+      password: "{{ password }}"
+      hostname: "{{ inventory_hostname }}"
+      https: yes
+      validate_certs: false
+
+  tasks:
+    - name: Modify SSH algorithms at cluster level
+      delegate_to: localhost
+      netapp.ontap.na_ontap_security_ssh:
+        vserver:
+        ciphers: ["aes256-ctr","aes192-ctr","aes128-ctr","aes128-gcm","aes256-gcm"]
+        key_exchange_algorithms: ["diffie-hellman-group-exchange-sha256","ecdh-sha2-nistp256","ecdh-sha2-nistp384","ecdh-sha2-nistp521","curve25519-sha256"]
+        mac_algorithms: ["hmac-sha2-256","hmac-sha2-512","hmac-sha2-256-etm","hmac-sha2-512-etm","umac-64","umac-128","umac-64-etm","umac-128-etm"]
+        max_authentication_retry_count: 6
+        <<: *login
+
+    - name: Modify SSL Security Config
+      delegate_to: localhost
+      netapp.ontap.na_ontap_security_config:
+        #name: ssl
+        is_fips_enabled: false
+        supported_cipher_suites: ["TLS_PSK_WITH_AES_256_GCM_SHA384","TLS_RSA_WITH_AES_128_GCM_SHA256","TLS_RSA_WITH_AES_256_GCM_SHA384","TLS_DHE_DSS_WITH_AES_128_GCM_SHA256","TLS_DHE_DSS_WITH_AES_256_GCM_SHA384","TLS_DHE_RSA_WITH_AES_128_GCM_SHA256","TLS_DHE_RSA_WITH_AES_256_GCM_SHA384","TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256","TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384","TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256","TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"]
+        #supported_ciphers:  'ALL:!LOW:!aNULL:!EXP:!eNULL:!3DES:!RC4:!SHA1'
+        supported_protocols: ['TLSv1.2']
+        <<: *login
+
+# src https://docs.ansible.com/ansible/latest/collections/netapp/ontap/na_ontap_security_ssh_module.html
+# src https://docs.ansible.com/ansible/latest/collections/netapp/ontap/na_ontap_security_config_module.html

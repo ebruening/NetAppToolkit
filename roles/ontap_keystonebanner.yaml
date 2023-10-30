@@ -1,0 +1,22 @@
+---
+- hosts: all
+  gather_facts: no
+  vars_prompt:
+    - name: password
+      private: yes
+
+  vars:
+    login: &login
+      username: ansible #"{{ username }}"
+      password: "{{ password }}"
+      hostname: "{{ inventory_hostname }}"
+      https: yes
+      validate_certs: false
+  
+  tasks:
+    - name: modify motd cluster - REST
+      delegate_to: localhost
+      netapp.ontap.na_ontap_login_messages:
+        motd_message: "\n authorized access only \n\n Keystone System, please be aware of special QoS values \n Keystone Germany Hotline +49 8006 2730 17 \n Email keystone.services@netapp.com \n For any escalations, please reachout keystone.escalations@netapp.com \n\n case management https://netappgssc.service-now.com/csm" 
+        show_cluster_motd: True
+        <<: *login
